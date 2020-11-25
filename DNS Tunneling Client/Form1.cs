@@ -1,5 +1,7 @@
 ﻿using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -24,26 +26,43 @@ namespace DNS_Tunneling_Client
             Proxy proxy = new Proxy("127.0.0.1", 8008);
             proxy.Start();
         }
-        private void start_btn_Click(object sender, EventArgs e)
-        {
-           
 
-        }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
-            DNSTunnel tunnel1 = new DNSTunnel(domain_txt.Text);
+            //localIP localIP = new localIP();
+            //List<string> ipList = localIP.getNetworkInterface();
+            //foreach (var ip in ipList)
+            //{
+            //    cboListOfIPs.Items.Add(ip);
+            //}
+            //var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
+            //DNSTunnel tunnel1 = new DNSTunnel(tbxDomain.Text);
 
-            new Thread(() =>
-            {
-                Thread.CurrentThread.IsBackground = true;
-                /* run your code here */
-                tunnel1.Start();
-            }).Start();
+            //new Thread(() =>
+            //{
+            //    Thread.CurrentThread.IsBackground = true;
+            //    /* run your code here */
+            //    tunnel1.Start();
+            //}).Start();
 
         }
 
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            if (btnStart.BackColor != Color.Red)
+            {
+                btnStart.BackColor = Color.Red;
+                btnStart.Text = "Stop";
+            }
+            else
+            {
+                btnStart.BackColor = Color.Blue;
+                btnStart.Text = "Start";
+            }
+           
 
+
+        }
     }
 }
