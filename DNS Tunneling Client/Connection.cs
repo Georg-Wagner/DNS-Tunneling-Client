@@ -3,10 +3,9 @@ using System.Net.Sockets;
 using Serilog;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading;
-using System.Security.Cryptography;
-
-
+using System.Linq;
 namespace DNS_Tunneling_Client
 {
     class Connection
@@ -18,13 +17,13 @@ namespace DNS_Tunneling_Client
         private NetworkStream upstream;
         private NetworkStream clientStream;
 
-        public Connection(String host, Int32 port, NetworkStream clientStream)
+        public Connection(String host, Int32 port, TcpClient tcpClient)
         {
             this.port = port;
             this.host = host;
           // var test = clientStream.ReadByte();
-            this.clientStream = clientStream;
-
+            this.clientStream = tcpClient.GetStream();
+            this.tcpClient = tcpClient;
 
         }
 
@@ -56,29 +55,192 @@ namespace DNS_Tunneling_Client
             try
             {
                 // 建立新连接
-               
-                    
+
+
                 Log.Information("connect to upstream: {0}:{1}", host, port);
-                byte[] dataToSend = new byte[] { };
-                using (MemoryStream ms = new MemoryStream())
+                List<byte> dataToSendList = new List<byte>();
+                byte[] dataRecivedFromBrowser = new byte[4096];
+                HashSet<byte[]> dataRecivedFromDNSTunnel = new HashSet<byte[]>();
+
+
+                string streamId = DNSTunnel.CreateStream();
+                new Thread(() =>
                 {
-                    clientStream.CopyTo(ms);
-                    dataToSend = ms.ToArray();
+                    while (true)
+                    {
+                        try
+                        {
+                           // byte[] dataToSendArr = new byte[4096];
+                            int recivedBytesCountFromBrowser = 0;
+                            
+                            recivedBytesCountFromBrowser = clientStream.Read(dataRecivedFromBrowser);
+                            if (recivedBytesCountFromBrowser != 0)
+                            {
+                                dataRecivedFromBrowser = dataRecivedFromBrowser.Take(recivedBytesCountFromBrowser).ToArray();
+                               string messageId =  DNSTunnel.AddMessageToSendQueue(streamId, dataRecivedFromBrowser, host, port);
+                                Log.Information($"Added to SendQueue Size: {dataRecivedFromBrowser.Length}, ID: {streamId}, {host}:{port}");
+                                dataRecivedFromDNSTunnel = DNSTunnel.ReadStream(streamId, messageId);
+                                Log.Information($"Recived Size: {dataRecivedFromBrowser.Length}, ID: {streamId}, {host}:{port}");
+                            }
+                           
+                            //  await upstream.WriteAsync(dataToSendArr);
+
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+
+                    }
+
+
+                }).Start();
+
+
+                new Thread(async () =>
+                {
+                    bool cleanDataRecivedfromDNSTunnel = false;
+                    while (true)
+                    {
+                        try
+                        {
+                            foreach (byte[] data in dataRecivedFromDNSTunnel)
+                            {
+                                await clientStream.WriteAsync(data);
+                                cleanDataRecivedfromDNSTunnel = true;
+                            }
+                            if (cleanDataRecivedfromDNSTunnel)
+                            {
+                                dataRecivedFromDNSTunnel = new HashSet<byte[]>();
+                                cleanDataRecivedfromDNSTunnel = false;
+                            }
+                            
+                           
+                        }
+                        catch (Exception)
+                        {
+                        }
+
+                    }
+                }).Start();
+
+                //// clientStream.Write(recivedBytes);
+                ////  clientStream.Close();
+                //TcpClient tcpClientUpstream = new TcpClient();
+                //await tcpClientUpstream.ConnectAsync(host, port);
+                //upstream = tcpClientUpstream.GetStream();
+                ////upstream.ReadTimeout = 3000;
+                //await clientStream.CopyToAsync(upstream);
+                //// await upstream.WriteAsync(dataToSendArr, 0, dataToSendArr.Length);
+                ////byte[] dataBytesRecived = new byte[] { };
+                ////using (MemoryStream ms = new MemoryStream())
+                ////{
+                ////    upstream.CopyTo(ms);
+                ////    dataBytesRecived = ms.ToArray();
+                ////}
+                //await upstream.CopyToAsync(clientStream);
+                ////    await upstream.WriteAsync(dataBytesRecived, 0, dataBytesRecived.Length);
+                ////// 独立线程，完成自己的任务后消失
+                ////var thread = new Thread(CopyTo);
+                ////thread.Start();
+
+                ////await upstream.CopyToAsync(clientStream);
+                //Close();
+            }
+            catch (IOException e)
+            {
+                try
+                {
+                    Close();
                 }
-               // TODO peredavat host i port
-                string StreamId = DNSTunnel.AddMessageToSendQueue(dataToSend,host,port);
-                byte[] recivedBytes =  DNSTunnel.ReadStream(StreamId);
-                tcpClient = new TcpClient();
-                await tcpClient.ConnectAsync(host, port);
-                upstream = tcpClient.GetStream();
-                upstream.ReadTimeout = 3000;
+                catch (Exception)
+                {
 
-                // 独立线程，完成自己的任务后消失
-                var thread = new Thread(CopyTo);
-                thread.Start();
+                }
 
-                await upstream.CopyToAsync(clientStream);
-                Close();
+                Log.Information("connect to upstream {0}:{1} error: ", host, port, e.Message);
+            }
+        }
+        public async Task Response1()
+        {
+            try
+            {
+                
+                // 建立新连接
+                Log.Information("connect to upstream: {0}:{1}", host, port);
+          
+                //byte[] dataToSendArr = new byte[] { };
+                //using (MemoryStream ms = new MemoryStream())
+                //{
+                //    clientStream.CopyTo(ms);
+                //    dataToSendArr = ms.ToArray();
+                //}
+                //Log.Information($"Got {dataToSendArr.Length} bytes to send");
+                //await upstream.WriteAsync(dataToSendArr);
+                //Log.Information($"Sent {dataToSendArr.Length} bytes to {host}");
+                //var thread = new Thread(CopyTo);
+                //thread.Start();
+                
+                  // clientStream.CopyTo(upstream);
+
+
+                  //using (MemoryStream ms = new MemoryStream())
+                  //       {
+                  //           clientStream.CopyTo(ms);
+                  //           dataToSendArr = ms.ToArray();
+                  //       }
+                  TcpClient tcpClient_up = new TcpClient();
+                await tcpClient_up.ConnectAsync(host, port);
+                Log.Information($"Connected to {host}:{port}");
+                upstream = tcpClient_up.GetStream();
+               // upstream.ReadTimeout = 3000;
+                new Thread(async () =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            byte[] dataToSendArr = new byte[4096];
+                            int recivedBytes = 0;
+                            //recivedBytes = tcpClient.Client.Receive(dataToSendArr);
+                            recivedBytes = clientStream.Read(dataToSendArr);
+                            dataToSendArr = dataToSendArr.Take(recivedBytes).ToArray();
+                            //  clientStream.CopyTo(upstream);
+                            await upstream.WriteAsync(dataToSendArr);
+                            // tcpClient_up.Client.Send(dataToSendArr);
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+                      
+                    }
+
+
+                }).Start();
+                new Thread(async () =>
+                {
+                      while (true)
+                      {
+                        try
+                        {
+                            byte[] dataToSendArr1 = new byte[4096];
+                            int recivedBytes = 0;
+                            recivedBytes = upstream.Read(dataToSendArr1);
+                            dataToSendArr1 = dataToSendArr1.Take(recivedBytes).ToArray();
+                            await clientStream.WriteAsync(dataToSendArr1);
+                        }
+                        catch (Exception)
+                        {
+                        }
+                   
+                       }
+                }).Start();
+
+               // await upstream.CopyToAsync(clientStream);
+              // Log.Information($"Trsnsfered {dataToSendArr.Length} bytes from {host} to Browser");
+              //  Close();
+                Log.Information($"Closed connection with {host}");
             }
             catch (IOException e)
             {

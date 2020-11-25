@@ -90,8 +90,8 @@ namespace DNS_Tunneling_Client
                         numberOfbyteshasRead += n;
                     } while (numbytesToRead > 0);
 
-                    Log.Logger.Information("Socks5: upstream domian is {0}",
-                        Encoding.ASCII.GetString(bytes, 0, numberOfbyteshasRead));
+                 //   Log.Logger.Information("Socks5: upstream domian is {0}",
+                    //    Encoding.ASCII.GetString(bytes, 0, numberOfbyteshasRead));
                     var domain = Encoding.ASCII.GetString(bytes, 0, numberOfbyteshasRead);
                     return domain;
 
@@ -119,7 +119,7 @@ namespace DNS_Tunneling_Client
             } while (numbytesToRead > 0);
             if (numberOfbyteshasRead == 0)
                 throw new SocksUpsteamPortException("can not parse upstream port");
-            Log.Logger.Information("Socks5: upstream port {0}", bytes[0] * 256 + bytes[1]);
+           // Log.Logger.Information("Socks5: upstream port {0}", bytes[0] * 256 + bytes[1]);
             return bytes[0] * 256 + bytes[1];
         }
 
@@ -158,7 +158,7 @@ namespace DNS_Tunneling_Client
                 //string clientStream = BitConverter.ToString(clientbytes, 0, clientbytes.Length);
                 //Console.WriteLine(clientStream);
 
-                var conn = new Connection(GetHost(stream, bytes[3], client), GetPort(stream), stream);
+                var conn = new Connection(GetHost(stream, bytes[3], client), GetPort(stream), client);
                 ResponseToSocks(stream);
 
 
@@ -195,7 +195,7 @@ namespace DNS_Tunneling_Client
             {
                 TcpClient client = tcpListener.AcceptTcpClient();
                 NetworkStream stream = client.GetStream();
-
+                
                 new Thread(() =>
                 {
                     Thread.CurrentThread.IsBackground = true;

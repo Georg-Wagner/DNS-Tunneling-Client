@@ -1,4 +1,5 @@
 ﻿using DnsClient;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,8 +15,8 @@ namespace DNS_Tunneling_Client
 
     public class DNSTunnel
     {
-        public static ConcurrentDictionary<string, string[]> SendQueue = new ConcurrentDictionary<string, string[]>();
-        public static ConcurrentDictionary<string, string[]> ReciveQueue = new ConcurrentDictionary<string, string[]>();
+        public static ConcurrentDictionary<string, ConcurrentDictionary<string, string[]>> SendQueue = new ConcurrentDictionary<string, ConcurrentDictionary<string, string[]>>();
+        public static ConcurrentDictionary<string, ConcurrentDictionary<string, string[]>> ReciveQueue = new ConcurrentDictionary<string, ConcurrentDictionary<string, string[]>>();
         private static Random rnd = new Random();
         private static string _IP;
         private static string _tunnelingDomain;
@@ -48,50 +49,110 @@ namespace DNS_Tunneling_Client
             _port = 0;
             _tunnelingDomain = tunnelingDomain;
         }
-        public static byte[] ReadStream(string streamId) 
+        public static HashSet<byte[]> ReadStream(string streamId, string messageId) 
         {
-          var thrd =  new Thread(() =>
+            HashSet<byte[]> rtrn = new HashSet<byte[]>();
+            try
             {
-                Thread.CurrentThread.IsBackground = true;
+
+       
+            //var thrd =  new Thread(() =>
+            //  {
+            //  Thread.CurrentThread.IsBackground = true;
+            
                 string[] streamQueue;
-                while (ReciveQueue.TryGetValue(streamId, out streamQueue) == false) ;
-                a1:
+   a1:
+            ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
+                while (!ReciveQueue.TryGetValue(streamId, out stream));
+     
+            
+
+                    while (!ReciveQueue.TryGetValue(streamId, out stream));
+                    while (!stream.TryGetValue(messageId, out streamQueue)) ;
+                    while (streamQueue.Length == 0)
+                    {
+                            stream.TryGetValue(messageId, out streamQueue);
+                    }
+              
                 try
                 {
-
-                    while (streamQueue.All(x => !string.IsNullOrEmpty(x)))
+                    for (int i = 0; i < streamQueue.Length; i++)
                     {
-                        while (ReciveQueue.TryGetValue(streamId, out streamQueue) == false) ;
+                        while (string.IsNullOrEmpty(streamQueue[i]))
+                        {
+                            while (stream.TryGetValue(messageId, out streamQueue) == false) ;
+                        }
+                    }
+                    while (streamQueue.All(x => string.IsNullOrEmpty(x)))
+                    {
+                        while (stream.TryGetValue(messageId, out streamQueue) == false) ;
                     }
                 }
                 catch (Exception)
                 {
-                    while (ReciveQueue.TryGetValue(streamId, out streamQueue) == false) ;
+                    while (stream.TryGetValue(messageId, out streamQueue) == false) ;
                     goto a1;
                 }
-
-            });
-            thrd.Start();
-            if (!thrd.Join(TimeSpan.FromSeconds(360)))
-            {
-                thrd.Abort();
+                string base64Recived = "";
+                foreach (string hexLine in streamQueue)
+                {
+                    base64Recived += hexLine;
+                }
+                rtrn.Add(Convert.FromBase64String(base64Recived));
+            
+            //});
+            //thrd.Start();
+            //if (!thrd.Join(TimeSpan.FromSeconds(360)))
+            //{
+            //    thrd.Abort();
+            //}
+       
+                
+               
             }
+            catch (Exception)
+            {
 
-                return new byte[] { };
+            }
+            return rtrn;
         }
-        public static string AddMessageToSendQueue(byte[] messageBytes, string host, Int32 port)
+        public static byte[] HexStringToByteArray(string hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
+        public static string AddMessageToSendQueue(string streamId, byte[] messageBytes, string host, Int32 port)
         {
             string messageHexString = ByteArrayToString(messageBytes);
             string hostPortHex = ByteArrayToString(Encoding.ASCII.GetBytes(host + ":" + port));
             string[] message = ConvertHexStringToDomainSendQueue(messageHexString, hostPortHex);
-            string generatedID = GenerateID();
-            SendQueue.TryAdd(generatedID, message);
-            return generatedID;
+            string messageId = GenerateID();
+            if (SendQueue.ContainsKey(streamId))
+            {
+                ConcurrentDictionary<string, string[]> streamMessagesOld = new ConcurrentDictionary<string, string[]>();
+                ConcurrentDictionary<string, string[]> streamMessagesNew = new ConcurrentDictionary<string, string[]>();
+                SendQueue.TryGetValue(streamId, out streamMessagesOld);
+                SendQueue.TryGetValue(streamId, out streamMessagesNew);
+                streamMessagesNew.TryAdd(messageId, message);
+                SendQueue.TryUpdate(streamId, streamMessagesNew, streamMessagesOld);
+            }
+            else
+            {
+                ConcurrentDictionary<string, string[]> streamMessages = new ConcurrentDictionary<string, string[]>();
+                streamMessages.TryAdd(messageId, message);
+                SendQueue.TryAdd(streamId, streamMessages);
+            }
+
+            
+            return messageId;
         }
         private static string[] ConvertHexStringToDomainSendQueue(string hexData, string hostPortHex)
         {
             int tunnelingDomainLenght = TunnelingDomain.Replace(".","").Length;
-            int idLenght = 6;
+            int idLenght = 14;
             int packetCountLenght = 13;
             int maxHexDataLenght = 253 - tunnelingDomainLenght - idLenght - packetCountLenght;
             int domainsCount = hexData.Length / maxHexDataLenght +1;
@@ -139,14 +200,18 @@ namespace DNS_Tunneling_Client
         private static string GenerateID()
         {
              return rnd.Next(1, 16777215).ToString("x");             
-        }                                            
+        }
+        public static string CreateStream()
+        {
+            return GenerateID();
+        }
         private static string ByteArrayToString(byte[] ba)
         {
             return BitConverter.ToString(ba).Replace("-", "");
         }
         public void Start()
-        {
-            Thread.CurrentThread.IsBackground = true;
+        {                                                                                                                                               
+           // Thread.CurrentThread.IsBackground = true;
             var client = new LookupClient();
             if (_IP != null && _port != 0)
             {
@@ -154,31 +219,43 @@ namespace DNS_Tunneling_Client
                 client = new LookupClient(endpoint);
             }
             client.UseCache = false;
-            
+
             while (true)
             {
-
-                new Thread(() =>
+                foreach (string streamId in SendQueue.Keys)
                 {
-                    Thread.CurrentThread.IsBackground = true;
-                    // string message = "";
+
+                    ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
+                    SendQueue.TryGetValue(streamId, out stream);
+
+            //    new Thread(() =>
+            //    {
+            //Thread.CurrentThread.IsBackground = true;
+            // string message = "";
                     string messageID;
                     IEnumerable<DnsClient.Protocol.TxtRecord> result = new List<DnsClient.Protocol.TxtRecord>();
-                    if (!SendQueue.IsEmpty)
+                    if (!stream.IsEmpty || stream.Count != 0)
                     {
-                        messageID = SendQueue.Keys.First();
-                        while (ReciveQueue.TryAdd(messageID, null) == false) ;
-                        string[] msg = new string[] { "" };
-                    while (SendQueue.TryRemove(messageID, out msg) == false) ;
+                        messageID = stream.Keys.First();
+                        ReciveQueue.TryAdd(streamId, new ConcurrentDictionary<string, string[]>());
+                        ConcurrentDictionary<string, string[]> reciveQueueStreamNew = new ConcurrentDictionary<string, string[]>();
+                        ConcurrentDictionary<string, string[]> reciveQueueStreamOld = new ConcurrentDictionary<string, string[]>();
+                        ReciveQueue.TryGetValue(streamId, out reciveQueueStreamNew);
+                        ReciveQueue.TryGetValue(streamId, out reciveQueueStreamOld);
 
+                        reciveQueueStreamNew.TryAdd(messageID, new string[] { });
+                        ReciveQueue.TryUpdate(streamId, reciveQueueStreamNew, reciveQueueStreamOld);
+                        string[] msg = new string[] { "" };
+                    while (stream.TryRemove(messageID, out msg) == false) ;
+                        SendQueue[streamId] = stream;
                     for (int i = 0; i < msg.Length; ++i)
                         {
 
-try
+                        try
                         {
                             //Thread.CurrentThread.IsBackground = true;
-                            /* run your code here */
-                            string request = $"{msg[i]}.{messageID}.{i}-{msg.Length}.{_tunnelingDomain}";
+                           
+                            string request = $"{msg[i]}.{messageID}-{streamId}.{i}-{msg.Length}.{_tunnelingDomain}";
                             //client.Timeout = System.TimeSpan.FromMilliseconds(100);
 
                             var result2 = client.QueryAsync(request, QueryType.TXT);
@@ -186,13 +263,13 @@ try
                         // result = client.Query(request, QueryType.TXT).Answers.TxtRecords();
                         
                             foreach (var item in result2.Result.Answers.TxtRecords())
-                                                        {
+                              {
                                 if (item.Text.First() != "null")
                                 {
                                     ResultParser(item.Text.First());
                                 }
                                                             
-                                                        }
+                               }
                         }
                         catch (Exception)
                         {
@@ -223,10 +300,10 @@ try
                     }
                         
                     }
-               }).Start();
-              
+                    //          }).Start();
 
-                
+
+                }
             }
         }
         private void ResultParser(string result)
@@ -237,22 +314,42 @@ try
                 int pTo = result.LastIndexOf("]");
 
                 string msgInfo = result.Substring(pFrom, pTo - pFrom);
-                string messageID = msgInfo.Split('.')[0];
+                string messageID = msgInfo.Split('.')[0].Split('-')[0];
+                string streamID = msgInfo.Split('.')[0].Split('-')[1];
+
                 int messageNum = int.Parse(msgInfo.Split('.')[1].Split('-')[0]);
                 int messagesCount = int.Parse(msgInfo.Split('.')[1].Split('-')[1]);
                 string message = result.Split(']')[1];
-                if (ReciveQueue[messageID] == null)
+                ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
+                ReciveQueue.TryGetValue(streamID, out stream);
+                //try
+                //{
+                //    if (stream[messageID] == null)
+                //    { 
+
+                //    }
+                //}
+                //catch (Exception)
+                //{
+                //    stream[messageID] = new string[messagesCount];
+                //}
+                if (stream[messageID] == null || stream[messageID].Length == 0)
                 {
-                    ReciveQueue[messageID] = new string[messagesCount];
+                    stream[messageID] = new string[messagesCount];
                 }
                 try
                 {
-                    ReciveQueue[messageID][messageNum] = message;
+                    stream[messageID][messageNum] = message;
+                  //  Console.WriteLine($"Recived ID: {messageID}, {messageNum} / {messagesCount}");
                 }
                 catch (Exception)
                 {
 
                 }
+                ConcurrentDictionary<string, string[]> oldStream = new ConcurrentDictionary<string, string[]>();
+                ReciveQueue.TryGetValue(streamID, out stream);
+                ReciveQueue.TryUpdate(streamID, stream, oldStream);
+
             }
             catch (Exception)
             {

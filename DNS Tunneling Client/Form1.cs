@@ -21,11 +21,18 @@ namespace DNS_Tunneling_Client
 
             Log.Logger.Information("Start the Proxy Server");
 
-            Proxy proxy = new Proxy("127.0.0.1", 8000);
+            Proxy proxy = new Proxy("127.0.0.1", 8008);
             proxy.Start();
         }
         private void start_btn_Click(object sender, EventArgs e)
         {
+           
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
             DNSTunnel tunnel1 = new DNSTunnel(domain_txt.Text);
 
             new Thread(() =>
@@ -34,13 +41,9 @@ namespace DNS_Tunneling_Client
                 /* run your code here */
                 tunnel1.Start();
             }).Start();
-            var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
 
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
 
-        }
     }
 }
