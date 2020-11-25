@@ -9,7 +9,7 @@ namespace DNS_Tunneling_Client
     class localIP
     {
 
-        public List<string> getNetworkInterface()
+        public static getNetworkInterface()
         {
             String strHostName = string.Empty;
             // Getting Ip address of local machine
@@ -19,13 +19,13 @@ namespace DNS_Tunneling_Client
             // Then using host name, get the IP address list..
             IPHostEntry ipEntry = Dns.GetHostEntry(strHostName);
             IPAddress[] addr = ipEntry.AddressList;
-            List<string> ipList = new List<string>();
+            
             for (int i = 0; i < addr.Length; i++)
             {
-                ipList.Add(addr[i].ToString());
+                Console.WriteLine("IP Address {0}: {1} ", i, addr[i].ToString());
             }
 
-            return ipList;
+           
             
         }
 
