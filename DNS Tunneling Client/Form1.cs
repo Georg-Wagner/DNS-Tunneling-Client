@@ -27,7 +27,6 @@ namespace DNS_Tunneling_Client
             proxy.Start();
         }
 
-
         private void Form1_Load(object sender, EventArgs e)
         {
             //localIP localIP = new localIP();

@@ -24,7 +24,6 @@ namespace DNS_Tunneling_Client
             {
                 ipList.Add(addr[i].ToString());
             }
-
             return ipList;
             
         }
