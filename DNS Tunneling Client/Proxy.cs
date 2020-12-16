@@ -137,7 +137,7 @@ namespace DNS_Tunneling_Client
         {
             try
             {
-               
+
                 // 解析 socks 头
                 Int32 numbytesToRead = 4;
                 Int32 numberOfbyteshasRead = 0;
@@ -157,13 +157,23 @@ namespace DNS_Tunneling_Client
 
                 //string clientStream = BitConverter.ToString(clientbytes, 0, clientbytes.Length);
                 //Console.WriteLine(clientStream);
-
-                var conn = new Connection(GetHost(stream, bytes[3], client), GetPort(stream), client);
                 ResponseToSocks(stream);
+                string host = GetHost(stream, bytes[3], client);
+                if (host == null || host.Contains("mozilla") || host.Contains("getpocket") || host.Contains("firefox"))
+                {
+                    stream.Close();
+                }
+                else
+                {
+                    var conn = new Connection(host, GetPort(stream), client);
+                    //ResponseToSocks(stream);
 
 
-                // 转发请求并获取响应
-                await conn.Response();
+                    // 转发请求并获取响应
+                    await conn.Response();
+                }
+                
+               
             }
             catch (IOException e)
             {

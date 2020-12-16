@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -201,9 +202,11 @@ namespace DNS_Tunneling_Client
         {
              return rnd.Next(1, 16777215).ToString("x");             
         }
-        public static string CreateStream()
+        public static string CreateStream(NetworkStream stream)
         {
-            return GenerateID();
+            string streamID = GenerateID();
+            DNSTunnelReciveQueue.AddNewStream(streamID, stream);
+            return streamID;
         }
         private static string ByteArrayToString(byte[] ba)
         {
@@ -237,14 +240,14 @@ namespace DNS_Tunneling_Client
                     if (!stream.IsEmpty || stream.Count != 0)
                     {
                         messageID = stream.Keys.First();
-                        ReciveQueue.TryAdd(streamId, new ConcurrentDictionary<string, string[]>());
+                        DNSTunnelReciveQueue.TryAdd(streamId, new ConcurrentDictionary<string, string[]>());
                         ConcurrentDictionary<string, string[]> reciveQueueStreamNew = new ConcurrentDictionary<string, string[]>();
                         ConcurrentDictionary<string, string[]> reciveQueueStreamOld = new ConcurrentDictionary<string, string[]>();
-                        ReciveQueue.TryGetValue(streamId, out reciveQueueStreamNew);
-                        ReciveQueue.TryGetValue(streamId, out reciveQueueStreamOld);
+                        DNSTunnelReciveQueue.TryGetValue(streamId, out reciveQueueStreamNew);
+                        DNSTunnelReciveQueue.TryGetValue(streamId, out reciveQueueStreamOld);
 
                         reciveQueueStreamNew.TryAdd(messageID, new string[] { });
-                        ReciveQueue.TryUpdate(streamId, reciveQueueStreamNew, reciveQueueStreamOld);
+                        DNSTunnelReciveQueue.TryUpdate(streamId, reciveQueueStreamNew, reciveQueueStreamOld);
                         string[] msg = new string[] { "" };
                     while (stream.TryRemove(messageID, out msg) == false) ;
                         SendQueue[streamId] = stream;
@@ -320,35 +323,37 @@ namespace DNS_Tunneling_Client
                 int messageNum = int.Parse(msgInfo.Split('.')[1].Split('-')[0]);
                 int messagesCount = int.Parse(msgInfo.Split('.')[1].Split('-')[1]);
                 string message = result.Split(']')[1];
-                ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
-                ReciveQueue.TryGetValue(streamID, out stream);
-                //try
-                //{
-                //    if (stream[messageID] == null)
-                //    { 
+                DNSTunnelReciveQueue.Put(streamID, messageID, message, messagesCount, messageNum); //nezavisimo ot togo pustoe soobshenie ili net
+                //ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
+                //ReciveQueue.TryGetValue(streamID, out stream);
 
-                //    }
-                //}
-                //catch (Exception)
+                ////try
+                ////{
+                ////    if (stream[messageID] == null)
+                ////    { 
+
+                ////    }
+                ////}
+                ////catch (Exception)
+                ////{
+                ////    stream[messageID] = new string[messagesCount];
+                ////}
+                //if (stream[messageID] == null || stream[messageID].Length == 0)
                 //{
                 //    stream[messageID] = new string[messagesCount];
                 //}
-                if (stream[messageID] == null || stream[messageID].Length == 0)
-                {
-                    stream[messageID] = new string[messagesCount];
-                }
-                try
-                {
-                    stream[messageID][messageNum] = message;
-                  //  Console.WriteLine($"Recived ID: {messageID}, {messageNum} / {messagesCount}");
-                }
-                catch (Exception)
-                {
+                //try
+                //{
+                //    stream[messageID][messageNum] = message;
+                //  //  Console.WriteLine($"Recived ID: {messageID}, {messageNum} / {messagesCount}");
+                //}
+                //catch (Exception)
+                //{
 
-                }
-                ConcurrentDictionary<string, string[]> oldStream = new ConcurrentDictionary<string, string[]>();
-                ReciveQueue.TryGetValue(streamID, out stream);
-                ReciveQueue.TryUpdate(streamID, stream, oldStream);
+                //}
+                ////ConcurrentDictionary<string, string[]> oldStream = new ConcurrentDictionary<string, string[]>();
+                ////ReciveQueue.TryGetValue(streamID, out oldStream);
+                ////ReciveQueue.TryUpdate(streamID, stream, oldStream);
 
             }
             catch (Exception)

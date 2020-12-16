@@ -10,7 +10,7 @@ namespace DNS_Tunneling_Client
 {
     class Connection
     {
-        private Int32 port = 80;
+        private Int32 port;
         private String host;
 
         private TcpClient tcpClient;
@@ -63,28 +63,32 @@ namespace DNS_Tunneling_Client
                 HashSet<byte[]> dataRecivedFromDNSTunnel = new HashSet<byte[]>();
 
 
-                string streamId = DNSTunnel.CreateStream();
-                new Thread(() =>
+                string streamId = DNSTunnel.CreateStream(clientStream);
+                new Thread(async () =>
                 {
                     while (true)
                     {
                         try
                         {
+                            if (clientStream.DataAvailable)
+                            {
+
+                            
                            // byte[] dataToSendArr = new byte[4096];
                             int recivedBytesCountFromBrowser = 0;
                             
-                            recivedBytesCountFromBrowser = clientStream.Read(dataRecivedFromBrowser);
+                            recivedBytesCountFromBrowser = await clientStream.ReadAsync(dataRecivedFromBrowser);
                             if (recivedBytesCountFromBrowser != 0)
                             {
                                 dataRecivedFromBrowser = dataRecivedFromBrowser.Take(recivedBytesCountFromBrowser).ToArray();
                                string messageId =  DNSTunnel.AddMessageToSendQueue(streamId, dataRecivedFromBrowser, host, port);
                                 Log.Information($"Added to SendQueue Size: {dataRecivedFromBrowser.Length}, ID: {streamId}, {host}:{port}");
-                                dataRecivedFromDNSTunnel = DNSTunnel.ReadStream(streamId, messageId);
-                                Log.Information($"Recived Size: {dataRecivedFromBrowser.Length}, ID: {streamId}, {host}:{port}");
+                              //  dataRecivedFromDNSTunnel = DNSTunnel.ReadStream(streamId, messageId);
+                              //  Log.Information($"Recived Size: {dataRecivedFromDNSTunnel.Length}, ID: {streamId}, {host}:{port}");
                             }
-                           
-                            //  await upstream.WriteAsync(dataToSendArr);
 
+                                //  await upstream.WriteAsync(dataToSendArr);
+                            }
                         }
                         catch (Exception)
                         {
@@ -97,32 +101,32 @@ namespace DNS_Tunneling_Client
                 }).Start();
 
 
-                new Thread(async () =>
-                {
-                    bool cleanDataRecivedfromDNSTunnel = false;
-                    while (true)
-                    {
-                        try
-                        {
-                            foreach (byte[] data in dataRecivedFromDNSTunnel)
-                            {
-                                await clientStream.WriteAsync(data);
-                                cleanDataRecivedfromDNSTunnel = true;
-                            }
-                            if (cleanDataRecivedfromDNSTunnel)
-                            {
-                                dataRecivedFromDNSTunnel = new HashSet<byte[]>();
-                                cleanDataRecivedfromDNSTunnel = false;
-                            }
+                //new Thread(async () =>
+                //{
+                //    bool cleanDataRecivedfromDNSTunnel = false;
+                //    while (true)
+                //    {
+                //        try
+                //        {
+                //            foreach (byte[] data in dataRecivedFromDNSTunnel)
+                //            {
+                //                await clientStream.WriteAsync(data);
+                //                cleanDataRecivedfromDNSTunnel = true;
+                //            }
+                //            if (cleanDataRecivedfromDNSTunnel)
+                //            {
+                //                dataRecivedFromDNSTunnel = new HashSet<byte[]>();
+                //                cleanDataRecivedfromDNSTunnel = false;
+                //            }
                             
                            
-                        }
-                        catch (Exception)
-                        {
-                        }
+                //        }
+                //        catch (Exception)
+                //        {
+                //        }
 
-                    }
-                }).Start();
+                //    }
+                //}).Start();
 
                 //// clientStream.Write(recivedBytes);
                 ////  clientStream.Close();

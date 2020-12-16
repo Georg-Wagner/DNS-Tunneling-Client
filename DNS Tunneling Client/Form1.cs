@@ -29,21 +29,21 @@ namespace DNS_Tunneling_Client
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //localIP localIP = new localIP();
-            //List<string> ipList = localIP.getNetworkInterface();
-            //foreach (var ip in ipList)
-            //{
-            //    cboListOfIPs.Items.Add(ip);
-            //}
-            //var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
-            //DNSTunnel tunnel1 = new DNSTunnel(tbxDomain.Text);
+            localIP localIP = new localIP();
+            List<string> ipList = localIP.getNetworkInterface();
+            foreach (var ip in ipList)
+            {
+                cboListOfIPs.Items.Add(ip);
+            }
+            var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
+            DNSTunnel tunnel1 = new DNSTunnel(tbxDomain.Text);
 
-            //new Thread(() =>
-            //{
-            //    Thread.CurrentThread.IsBackground = true;
-            //    /* run your code here */
-            //    tunnel1.Start();
-            //}).Start();
+            new Thread(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                /* run your code here */
+                tunnel1.Start();
+            }).Start();
 
         }
 
