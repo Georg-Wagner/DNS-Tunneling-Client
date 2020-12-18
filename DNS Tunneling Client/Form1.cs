@@ -49,14 +49,14 @@ namespace DNS_Tunneling_Client
 
         private void btnStart_Click(object sender, EventArgs e)
         {
-            if (btnStart.BackColor != Color.Red)
+            if (btnStart.BackColor != Color.Firebrick)
             {
-                btnStart.BackColor = Color.Red;
+                btnStart.BackColor = Color.Firebrick;
                 btnStart.Text = "Stop";
             }
             else
             {
-                btnStart.BackColor = Color.Blue;
+                btnStart.BackColor = Color.Teal;
                 btnStart.Text = "Start";
             }
            
