@@ -10,11 +10,13 @@ namespace DNS_Tunneling_Client
 {
     public partial class Form1 : Form
     {
+        Thread socksProxyThread;
+        Thread tunnelingThread;
         public Form1()
         {
             InitializeComponent();
         }
-        public static void ProxyProcess()
+        public void ProxyProcess(string ip, int port)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
@@ -23,7 +25,7 @@ namespace DNS_Tunneling_Client
 
             Log.Logger.Information("Start the Proxy Server");
 
-            Proxy proxy = new Proxy("127.0.0.1", 8008);
+            Proxy proxy = new Proxy(ip, port);
             proxy.Start();
         }
 
@@ -35,27 +37,37 @@ namespace DNS_Tunneling_Client
             {
                 cboListOfIPs.Items.Add(ip);
             }
-            var task = Task.Factory.StartNew(ProxyProcess, TaskCreationOptions.LongRunning);
-            DNSTunnel tunnel1 = new DNSTunnel(tbxDomain.Text);
-
-            new Thread(() =>
-            {
-                Thread.CurrentThread.IsBackground = true;
-                /* run your code here */
-                tunnel1.Start();
-            }).Start();
-
         }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
+            string ip = cboListOfIPs.Text;
+            int port = Convert.ToInt32(numPort.Value);
             if (btnStart.BackColor != Color.Firebrick)
             {
+                cboListOfIPs.Enabled = false;
+                numPort.Enabled = false;
+            socksProxyThread =    new Thread(() =>
+                {
+                    Thread.CurrentThread.IsBackground = true;
+                    ProxyProcess(ip, port);
+                });
+                socksProxyThread.Start();
+                DNSTunnel tunnel = new DNSTunnel(tbxDomain.Text);
+
+             tunnelingThread =   new Thread(() =>
+                {
+                    
+                    tunnel.Start();
+                });
+                tunnelingThread.Start();
+
                 btnStart.BackColor = Color.Firebrick;
-                btnStart.Text = "Stop";
+                btnStart.Text = "Exit Tunnel";
             }
             else
             {
+                Application.Exit();
                 btnStart.BackColor = Color.Teal;
                 btnStart.Text = "Start";
             }
@@ -63,5 +75,6 @@ namespace DNS_Tunneling_Client
 
 
         }
+      
     }
 }

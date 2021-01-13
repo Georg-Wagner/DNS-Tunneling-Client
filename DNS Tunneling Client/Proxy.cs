@@ -1,5 +1,4 @@
-﻿// https://samsclass.info/122/proj/how-socks5-works.html
-
+﻿//Source: https://github.com/Jamlee/lite-proxy/tree/master/Socks
 using System;
 using System.Text;
 using System.Net;
@@ -66,9 +65,9 @@ namespace DNS_Tunneling_Client
 
             switch (flag)
             {
-                // 如果采用的是域名
+                // Wenn ein Domainname verwendet wird
                 case 0x03:
-                    // 获取域名长度
+                    // Ermittelt die Länge des Domainnamens
                     var numbytesToRead = 1;
                     var numberOfbyteshasRead = 0;
                     Array.Clear(bytes, 0, bytes.Length);
@@ -79,7 +78,7 @@ namespace DNS_Tunneling_Client
                         numberOfbyteshasRead += n;
                     } while (numbytesToRead > 0);
 
-                    // 获取域名
+                    // Auslesen des Domainnamens
                     numbytesToRead = bytes[0];
                     numberOfbyteshasRead = 0;
                     Array.Clear(bytes, 0, bytes.Length);
@@ -89,9 +88,6 @@ namespace DNS_Tunneling_Client
                         numbytesToRead -= n;
                         numberOfbyteshasRead += n;
                     } while (numbytesToRead > 0);
-
-                 //   Log.Logger.Information("Socks5: upstream domian is {0}",
-                    //    Encoding.ASCII.GetString(bytes, 0, numberOfbyteshasRead));
                     var domain = Encoding.ASCII.GetString(bytes, 0, numberOfbyteshasRead);
                     return domain;
 
@@ -119,7 +115,6 @@ namespace DNS_Tunneling_Client
             } while (numbytesToRead > 0);
             if (numberOfbyteshasRead == 0)
                 throw new SocksUpsteamPortException("can not parse upstream port");
-           // Log.Logger.Information("Socks5: upstream port {0}", bytes[0] * 256 + bytes[1]);
             return bytes[0] * 256 + bytes[1];
         }
 
@@ -138,7 +133,7 @@ namespace DNS_Tunneling_Client
             try
             {
 
-                // 解析 socks 头
+                // Socks Version ermitteln
                 Int32 numbytesToRead = 4;
                 Int32 numberOfbyteshasRead = 0;
                 var bytes = new byte[4];
@@ -149,27 +144,19 @@ namespace DNS_Tunneling_Client
                     numberOfbyteshasRead += n;
                     numbytesToRead -= n;
                 } while (numbytesToRead > 0);
-
-                // Tak ne rabotaet
-                //int recivedBuffreSize = (int)client.ReceiveBufferSize;
-                //byte[] clientbytes = new byte[recivedBuffreSize];
-                //int bytesRead = stream.Read(clientbytes, 0, recivedBuffreSize);
-
-                //string clientStream = BitConverter.ToString(clientbytes, 0, clientbytes.Length);
-                //Console.WriteLine(clientStream);
+                // Proxyverbindung mit dem Browser bestätigen
                 ResponseToSocks(stream);
                 string host = GetHost(stream, bytes[3], client);
-                if (host == null || host.Contains("mozilla") || host.Contains("getpocket") || host.Contains("firefox"))
+                // Blockieren von Browser-Statistik Anfragen, um unnötigen Datenverkehr zu reduzieren
+				if (host == null || host.Contains("mozilla") || host.Contains("getpocket") || host.Contains("firefox") || host.Contains("safebrowsing"))
                 {
                     stream.Close();
                 }
                 else
                 {
+
                     var conn = new Connection(host, GetPort(stream), client);
-                    //ResponseToSocks(stream);
-
-
-                    // 转发请求并获取响应
+                    //Hier wird die Browseranfrage an den DNS-Tunnel weitergeleitet
                     await conn.Response();
                 }
                 

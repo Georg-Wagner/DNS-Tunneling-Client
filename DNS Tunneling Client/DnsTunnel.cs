@@ -1,15 +1,11 @@
 ﻿using DnsClient;
-using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace DNS_Tunneling_Client
 {
@@ -39,7 +35,6 @@ namespace DNS_Tunneling_Client
         }
         public DNSTunnel(string IP, int port, string tunnelingDomain)
         {
-           
             _IP = IP;
             _port = port;
             _tunnelingDomain = tunnelingDomain;
@@ -50,86 +45,15 @@ namespace DNS_Tunneling_Client
             _port = 0;
             _tunnelingDomain = tunnelingDomain;
         }
-        public static HashSet<byte[]> ReadStream(string streamId, string messageId) 
-        {
-            HashSet<byte[]> rtrn = new HashSet<byte[]>();
-            try
-            {
 
-       
-            //var thrd =  new Thread(() =>
-            //  {
-            //  Thread.CurrentThread.IsBackground = true;
-            
-                string[] streamQueue;
-   a1:
-            ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
-                while (!ReciveQueue.TryGetValue(streamId, out stream));
-     
-            
-
-                    while (!ReciveQueue.TryGetValue(streamId, out stream));
-                    while (!stream.TryGetValue(messageId, out streamQueue)) ;
-                    while (streamQueue.Length == 0)
-                    {
-                            stream.TryGetValue(messageId, out streamQueue);
-                    }
-              
-                try
-                {
-                    for (int i = 0; i < streamQueue.Length; i++)
-                    {
-                        while (string.IsNullOrEmpty(streamQueue[i]))
-                        {
-                            while (stream.TryGetValue(messageId, out streamQueue) == false) ;
-                        }
-                    }
-                    while (streamQueue.All(x => string.IsNullOrEmpty(x)))
-                    {
-                        while (stream.TryGetValue(messageId, out streamQueue) == false) ;
-                    }
-                }
-                catch (Exception)
-                {
-                    while (stream.TryGetValue(messageId, out streamQueue) == false) ;
-                    goto a1;
-                }
-                string base64Recived = "";
-                foreach (string hexLine in streamQueue)
-                {
-                    base64Recived += hexLine;
-                }
-                rtrn.Add(Convert.FromBase64String(base64Recived));
-            
-            //});
-            //thrd.Start();
-            //if (!thrd.Join(TimeSpan.FromSeconds(360)))
-            //{
-            //    thrd.Abort();
-            //}
-       
-                
-               
-            }
-            catch (Exception)
-            {
-
-            }
-            return rtrn;
-        }
-        public static byte[] HexStringToByteArray(string hex)
-        {
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            return bytes;
-        }
         public static string AddMessageToSendQueue(string streamId, byte[] messageBytes, string host, Int32 port)
         {
+            //Daten werden in hexadezimale Form konvertiert, um als Subdomains verwendet zu werden
             string messageHexString = ByteArrayToString(messageBytes);
             string hostPortHex = ByteArrayToString(Encoding.ASCII.GetBytes(host + ":" + port));
+            //Browser-Anfrage wird auf mehrere DNS-anfragen geteilt und nummeriert
             string[] message = ConvertHexStringToDomainSendQueue(messageHexString, hostPortHex);
+            // MessageID und StreamID ermöglichen zurückgegebene Antworten vom Tunneling-Server zuzuordnen
             string messageId = GenerateID();
             if (SendQueue.ContainsKey(streamId))
             {
@@ -152,6 +76,7 @@ namespace DNS_Tunneling_Client
         }
         private static string[] ConvertHexStringToDomainSendQueue(string hexData, string hostPortHex)
         {
+            //Ermitteln der maximalen Größe von Daten, die in einer DNS-Anfrage verschickt werden kann
             int tunnelingDomainLenght = TunnelingDomain.Replace(".","").Length;
             int idLenght = 14;
             int packetCountLenght = 13;
@@ -159,7 +84,7 @@ namespace DNS_Tunneling_Client
             int domainsCount = hexData.Length / maxHexDataLenght +1;
             int labelsCount = maxHexDataLenght / 62;
             string[] splittedData = new string[domainsCount +1];
-
+            // Da die Subdomains nicht länger als 63 Zeichen sein dürfen, wird auch der Zielhost, falls er länger ist, aufgeteilt
             if (hostPortHex.Length > 62)
                 hostPortHex = hostPortHex.Insert(62, ".");
             if (hostPortHex.Length > 125)
@@ -170,9 +95,10 @@ namespace DNS_Tunneling_Client
 
 
             string hexSubdomains;
+
             for (int i = 0; i < domainsCount; i++)
             {
-                //   
+                
                 if (hexData.Length>maxHexDataLenght)
                 {
                     hexSubdomains = hexData.Substring(0, maxHexDataLenght);
@@ -184,7 +110,7 @@ namespace DNS_Tunneling_Client
                     hexData = hexData.Remove(0, hexData.Length);
                 }
                 
-
+                //Teilung auf Subdomains
                 if (hexSubdomains.Length > 62)
                     hexSubdomains = hexSubdomains.Insert(62, ".");
                 if (hexSubdomains.Length > 125)
@@ -213,15 +139,16 @@ namespace DNS_Tunneling_Client
             return BitConverter.ToString(ba).Replace("-", "");
         }
         public void Start()
-        {                                                                                                                                               
-           // Thread.CurrentThread.IsBackground = true;
-            var client = new LookupClient();
+        {
+            Thread.CurrentThread.IsBackground = true;
+            var dnsLookupClient = new LookupClient();
+            dnsLookupClient.Timeout = TimeSpan.FromSeconds(1000);
             if (_IP != null && _port != 0)
             {
                 var endpoint = new IPEndPoint(IPAddress.Parse(_IP), _port);
-                client = new LookupClient(endpoint);
+                dnsLookupClient = new LookupClient(endpoint);
             }
-            client.UseCache = false;
+            dnsLookupClient.UseCache = false;
 
             while (true)
             {
@@ -231,14 +158,11 @@ namespace DNS_Tunneling_Client
                     ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
                     SendQueue.TryGetValue(streamId, out stream);
 
-            //    new Thread(() =>
-            //    {
-            //Thread.CurrentThread.IsBackground = true;
-            // string message = "";
                     string messageID;
-                    IEnumerable<DnsClient.Protocol.TxtRecord> result = new List<DnsClient.Protocol.TxtRecord>();
+                   
                     if (!stream.IsEmpty || stream.Count != 0)
                     {
+                        //MessageID und StreamID werden von der Versandwarteschlange gelöscht und zur Empfangswarteschlange hinzugefügt
                         messageID = stream.Keys.First();
                         DNSTunnelReciveQueue.TryAdd(streamId, new ConcurrentDictionary<string, string[]>());
                         ConcurrentDictionary<string, string[]> reciveQueueStreamNew = new ConcurrentDictionary<string, string[]>();
@@ -256,16 +180,10 @@ namespace DNS_Tunneling_Client
 
                         try
                         {
-                            //Thread.CurrentThread.IsBackground = true;
-                           
+                            
                             string request = $"{msg[i]}.{messageID}-{streamId}.{i}-{msg.Length}.{_tunnelingDomain}";
-                            //client.Timeout = System.TimeSpan.FromMilliseconds(100);
-
-                            var result2 = client.QueryAsync(request, QueryType.TXT);
-                        
-                        // result = client.Query(request, QueryType.TXT).Answers.TxtRecords();
-                        
-                            foreach (var item in result2.Result.Answers.TxtRecords())
+                            var result = dnsLookupClient.QueryAsync(request, QueryType.TXT);
+                            foreach (var item in result.Result.Answers.TxtRecords())
                               {
                                 if (item.Text.First() != "null")
                                 {
@@ -285,10 +203,10 @@ namespace DNS_Tunneling_Client
                     else
                     {
                          try
-                    {
+                         {
                         messageID = GenerateID();
-                       // while (ReciveQueue.TryAdd(messageID, null) == false) ;
-                        result = client.Query($"{messageID}.0.{_tunnelingDomain}", QueryType.TXT).Answers.TxtRecords();
+                        // Da die zurückgegebenen Daten vom Server in der Regel größer als die von der Browser-Anfrage sind, es werden "leere" Pakete in den DNS-Anfragen verschickt um Downstream zu ermöglichen. Auch wenn es keine neuen Browser-Anfragen gibt
+                       var result = dnsLookupClient.Query($"{messageID}.0.{_tunnelingDomain}", QueryType.TXT).Answers.TxtRecords();
                    
                         foreach (var item in result)
                                                 {
@@ -303,7 +221,6 @@ namespace DNS_Tunneling_Client
                     }
                         
                     }
-                    //          }).Start();
 
 
                 }
@@ -319,41 +236,11 @@ namespace DNS_Tunneling_Client
                 string msgInfo = result.Substring(pFrom, pTo - pFrom);
                 string messageID = msgInfo.Split('.')[0].Split('-')[0];
                 string streamID = msgInfo.Split('.')[0].Split('-')[1];
-
+                
                 int messageNum = int.Parse(msgInfo.Split('.')[1].Split('-')[0]);
                 int messagesCount = int.Parse(msgInfo.Split('.')[1].Split('-')[1]);
                 string message = result.Split(']')[1];
-                DNSTunnelReciveQueue.Put(streamID, messageID, message, messagesCount, messageNum); //nezavisimo ot togo pustoe soobshenie ili net
-                //ConcurrentDictionary<string, string[]> stream = new ConcurrentDictionary<string, string[]>();
-                //ReciveQueue.TryGetValue(streamID, out stream);
-
-                ////try
-                ////{
-                ////    if (stream[messageID] == null)
-                ////    { 
-
-                ////    }
-                ////}
-                ////catch (Exception)
-                ////{
-                ////    stream[messageID] = new string[messagesCount];
-                ////}
-                //if (stream[messageID] == null || stream[messageID].Length == 0)
-                //{
-                //    stream[messageID] = new string[messagesCount];
-                //}
-                //try
-                //{
-                //    stream[messageID][messageNum] = message;
-                //  //  Console.WriteLine($"Recived ID: {messageID}, {messageNum} / {messagesCount}");
-                //}
-                //catch (Exception)
-                //{
-
-                //}
-                ////ConcurrentDictionary<string, string[]> oldStream = new ConcurrentDictionary<string, string[]>();
-                ////ReciveQueue.TryGetValue(streamID, out oldStream);
-                ////ReciveQueue.TryUpdate(streamID, stream, oldStream);
+                DNSTunnelReciveQueue.Put(streamID, messageID, message, messagesCount, messageNum); 
 
             }
             catch (Exception)

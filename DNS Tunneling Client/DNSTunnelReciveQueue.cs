@@ -1,10 +1,8 @@
 ﻿using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 
 namespace DNS_Tunneling_Client
@@ -48,27 +46,39 @@ namespace DNS_Tunneling_Client
             {
 
             }
+            //Überprüfung, ob diese Antwort vom Tunneling-Server der letzte Teil für diese messageID ist....
             if (messagesCount - 1 == messageNum)
             {
                 string[] messages;
                 byte[] dataRecivedFromDNSTunnel;
                 while (!stream.TryGetValue(messageID, out messages));
+                // Es wird überprüft, ob tatsächlich alle Teile angekommen sind
                 if (!messages.All(x => string.IsNullOrEmpty(x)))
                 {
+                    //Antworten werden zusammengefügt und in einen byte array konvertiert
                     string base64Recived = "";
-                    foreach (string hexLine in messages)
+                    foreach (string base64Line in messages)
                     {
-                        base64Recived += hexLine;
+                        base64Recived += base64Line;
                     }
                     dataRecivedFromDNSTunnel = Convert.FromBase64String(base64Recived);
 
+                    //Es wird der passende Networkstream rausgesucht
                     NetworkStream clientStream;
                     Streams.TryGetValue(streamID, out clientStream);
 
                 new Thread(async () =>
                 {
                     Log.Information($"Recived Size: {dataRecivedFromDNSTunnel.Length}, ID: {streamID}");
-                    await clientStream.WriteAsync(dataRecivedFromDNSTunnel);
+                    // Antwort wird an den Browser´zurückgegeben
+                    try
+                    {
+                        await clientStream.WriteAsync(dataRecivedFromDNSTunnel);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                 
 
                 }).Start();
                 }    

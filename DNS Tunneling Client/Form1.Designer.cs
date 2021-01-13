@@ -34,20 +34,20 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.tbxPorts = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.lblSpeed = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.numPort = new System.Windows.Forms.NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.SuspendLayout();
             // 
             // tbxDomain
             // 
-            this.tbxDomain.Font = new System.Drawing.Font("Century Gothic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.tbxDomain.Location = new System.Drawing.Point(76, 280);
-            this.tbxDomain.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            this.tbxDomain.Enabled = false;
+            this.tbxDomain.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.tbxDomain.Location = new System.Drawing.Point(141, 597);
+            this.tbxDomain.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.tbxDomain.Name = "tbxDomain";
-            this.tbxDomain.Size = new System.Drawing.Size(170, 26);
+            this.tbxDomain.Size = new System.Drawing.Size(312, 41);
             this.tbxDomain.TabIndex = 0;
             this.tbxDomain.Text = "oszimt.gq";
             // 
@@ -55,12 +55,12 @@
             // 
             this.btnStart.BackColor = System.Drawing.Color.Teal;
             this.btnStart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnStart.Font = new System.Drawing.Font("Century Gothic", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnStart.ForeColor = System.Drawing.Color.White;
-            this.btnStart.Location = new System.Drawing.Point(84, 408);
-            this.btnStart.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            this.btnStart.Location = new System.Drawing.Point(178, 685);
+            this.btnStart.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(125, 49);
+            this.btnStart.Size = new System.Drawing.Size(232, 105);
             this.btnStart.TabIndex = 1;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = false;
@@ -68,55 +68,47 @@
             // 
             // cboListOfIPs
             // 
-            this.cboListOfIPs.Font = new System.Drawing.Font("Century Gothic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.cboListOfIPs.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.cboListOfIPs.FormattingEnabled = true;
-            this.cboListOfIPs.Location = new System.Drawing.Point(76, 132);
-            this.cboListOfIPs.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            this.cboListOfIPs.Location = new System.Drawing.Point(141, 282);
+            this.cboListOfIPs.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.cboListOfIPs.Name = "cboListOfIPs";
-            this.cboListOfIPs.Size = new System.Drawing.Size(170, 28);
+            this.cboListOfIPs.Size = new System.Drawing.Size(312, 44);
             this.cboListOfIPs.TabIndex = 2;
+            this.cboListOfIPs.Text = "127.0.0.1";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Century Gothic", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label1.Location = new System.Drawing.Point(76, 100);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label1.Location = new System.Drawing.Point(141, 213);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(170, 22);
+            this.label1.Size = new System.Drawing.Size(305, 44);
             this.label1.TabIndex = 3;
             this.label1.Text = "Networkinterface";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Century Gothic", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label2.Location = new System.Drawing.Point(76, 175);
-            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label2.Location = new System.Drawing.Point(141, 373);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(46, 22);
+            this.label2.Size = new System.Drawing.Size(89, 44);
             this.label2.TabIndex = 4;
             this.label2.Text = "Port";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Century Gothic", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label3.Location = new System.Drawing.Point(76, 243);
-            this.label3.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label3.Location = new System.Drawing.Point(141, 518);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(86, 22);
+            this.label3.Size = new System.Drawing.Size(161, 44);
             this.label3.TabIndex = 5;
             this.label3.Text = "Domain ";
-            // 
-            // tbxPorts
-            // 
-            this.tbxPorts.Font = new System.Drawing.Font("Century Gothic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.tbxPorts.Location = new System.Drawing.Point(76, 207);
-            this.tbxPorts.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            this.tbxPorts.Name = "tbxPorts";
-            this.tbxPorts.Size = new System.Drawing.Size(170, 26);
-            this.tbxPorts.TabIndex = 6;
             // 
             // label4
             // 
@@ -124,54 +116,54 @@
             this.label4.BackColor = System.Drawing.Color.Teal;
             this.label4.Font = new System.Drawing.Font("Mongolian Baiti", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.label4.ForeColor = System.Drawing.Color.White;
-            this.label4.Location = new System.Drawing.Point(32, 37);
-            this.label4.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label4.Location = new System.Drawing.Point(59, 79);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(235, 34);
+            this.label4.Size = new System.Drawing.Size(453, 69);
             this.label4.TabIndex = 7;
             this.label4.Text = "DNS-Tunneling";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("Century Gothic", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label5.Location = new System.Drawing.Point(76, 322);
-            this.label5.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(162, 22);
-            this.label5.TabIndex = 8;
-            this.label5.Text = "Geschwindigkeit";
-            // 
-            // lblSpeed
-            // 
-            this.lblSpeed.AutoSize = true;
-            this.lblSpeed.Font = new System.Drawing.Font("Century Gothic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.lblSpeed.Location = new System.Drawing.Point(128, 361);
-            this.lblSpeed.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lblSpeed.Name = "lblSpeed";
-            this.lblSpeed.Size = new System.Drawing.Size(40, 20);
-            this.lblSpeed.TabIndex = 9;
-            this.lblSpeed.Text = "bit/s";
             // 
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.Teal;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel1.Location = new System.Drawing.Point(12, 26);
+            this.panel1.Location = new System.Drawing.Point(22, 55);
+            this.panel1.Margin = new System.Windows.Forms.Padding(6);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(286, 58);
+            this.panel1.Size = new System.Drawing.Size(529, 121);
             this.panel1.TabIndex = 10;
+            // 
+            // numPort
+            // 
+            this.numPort.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.numPort.Location = new System.Drawing.Point(141, 436);
+            this.numPort.Maximum = new decimal(new int[] {
+            65535,
+            0,
+            0,
+            0});
+            this.numPort.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numPort.Name = "numPort";
+            this.numPort.Size = new System.Drawing.Size(312, 40);
+            this.numPort.TabIndex = 11;
+            this.numPort.Value = new decimal(new int[] {
+            8008,
+            0,
+            0,
+            0});
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(309, 489);
+            this.ClientSize = new System.Drawing.Size(574, 829);
+            this.Controls.Add(this.numPort);
             this.Controls.Add(this.label4);
-            this.Controls.Add(this.lblSpeed);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.tbxPorts);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -179,10 +171,14 @@
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.tbxDomain);
             this.Controls.Add(this.panel1);
-            this.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            this.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
+            this.MaximizeBox = false;
+            this.MaximumSize = new System.Drawing.Size(600, 900);
+            this.MinimumSize = new System.Drawing.Size(600, 900);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "DNS Tunneling Client";
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.numPort)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -196,10 +192,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox tbxPorts;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label lblSpeed;
         private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.NumericUpDown numPort;
     }
 }
